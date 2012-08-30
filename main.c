@@ -11,6 +11,8 @@ static enum {
 	M_RAND = 0, M_CIRCLE, M_STROBO, M_INVAL
 } mode = M_RAND;
 
+unsigned char ee_mode EEMEM;
+
 static enum {
 	RED = 0, YELLOW, GREEN, CYAN, BLUE, VIOLET, MAGIC
 } color = RED;
@@ -34,7 +36,7 @@ int main (void)
 	unsigned char skip = 0;
 
 	unsigned char pwm[16] = {
-		0, 1, 1, 1, 1, 2, 2, 3, 4, 6, 8, 11, 15, 22, 30, 40
+		0, 1, 1, 1, 1, 2, 2, 3, 4, 6, 8, 11, 15, 22, 26, 30
 	};
 
 	unsigned int cnt_max = BRIGHTNESS_MAX;
@@ -51,6 +53,10 @@ int main (void)
 	CLKPR = 0;
 
 	b_red = b_green = b_blue = n_red = n_green = n_blue = 40;
+
+	mode = eeprom_read_byte(&ee_mode);
+	if (mode >= M_INVAL)
+		mode = M_CIRCLE;
 
 	while (1) {
 
@@ -71,9 +77,9 @@ int main (void)
 				case M_CIRCLE:
 				case M_STROBO:
 					color = (color + 1) % MAGIC;
-					n_red = (((color + 1) % MAGIC) < 3) * 40;
-					n_green = (((color + 2) % MAGIC) > 2) * 40;
-					n_blue = (color > 2) * 40;
+					n_red = (((color + 1) % MAGIC) < 3) * 30;
+					n_green = (((color + 2) % MAGIC) > 2) * 30;
+					n_blue = (color > 2) * 30;
 					if (mode == M_STROBO) {
 						b_red = n_red;
 						b_green = n_green;
@@ -100,6 +106,7 @@ int main (void)
 					mode = (mode + 1) % M_INVAL;
 					skip = 10;
 					n_red = n_green = n_blue = b_red = b_green = b_blue = 0;
+					eeprom_write_byte(&ee_mode, mode);
 				}
 			}
 			if (mode == M_STROBO) {
